@@ -61,7 +61,7 @@ We worked together to plan, develop, test, and deploy this platform with shared 
 
 1. **Clone the repo:**
    ```bash
-   git clone https://github.com/patibandhahoney/excel-analytics.git
+   git clone https://github.com/VarunKrishnaC-18/Excel-Analytics-Platform.git
    ```
 
 2. **Install dependencies:**
