@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import jsPDF from "jspdf";
 import { Bar, Line, Doughnut, Scatter } from "react-chartjs-2";
 import {
@@ -36,9 +36,16 @@ export const Dashboard = ({ data }) => {
   const chartRef = useRef(null);
   const chartContainerRef = useRef(null);
 
-  const columns = data?.data?.length ? Object.keys(data.data[0]) : [];
-  const numericColumns = columns.filter(col =>
-    data?.data?.some(row => typeof row[col] === "number")
+  const columns = useMemo(() =>
+    data?.data?.length ? Object.keys(data.data[0]) : [],
+    [data?.data]
+  );
+
+  const numericColumns = useMemo(() =>
+    columns.filter(col =>
+      data?.data?.some(row => typeof row[col] === "number")
+    ),
+    [columns, data?.data]
   );
 
   // ✅ HOOK MUST BE HERE (BEFORE RETURN)
@@ -65,6 +72,8 @@ export const Dashboard = ({ data }) => {
       </div>
     );
   }
+
+
 
   // Generate chart data
   const generateChartData = () => {
@@ -113,113 +122,113 @@ export const Dashboard = ({ data }) => {
   };
 
   const chartTypes = [
-  { id: 'bar', label: 'Bar Chart', icon: BarChart3 },
-  { id: 'line', label: 'Line Chart', icon: LineChart },
-  { id: 'doughnut', label: 'Pie Chart', icon: PieChart },
-  { id: 'scatter', label: 'Scatter Plot', icon: Activity },
-];
+    { id: 'bar', label: 'Bar Chart', icon: BarChart3 },
+    { id: 'line', label: 'Line Chart', icon: LineChart },
+    { id: 'doughnut', label: 'Pie Chart', icon: PieChart },
+    { id: 'scatter', label: 'Scatter Plot', icon: Activity },
+  ];
 
   const renderChart = () => {
-  switch (selectedChart) {
-    case 'bar':
-      return <Bar ref={chartRef} data={chartData} options={chartOptions} />;
-    case 'line':
-      return <Line ref={chartRef} data={chartData} options={chartOptions} />;
-   case 'doughnut': {
-  const grouped = {};
+    switch (selectedChart) {
+      case 'bar':
+        return <Bar ref={chartRef} data={chartData} options={chartOptions} />;
+      case 'line':
+        return <Line ref={chartRef} data={chartData} options={chartOptions} />;
+      case 'doughnut': {
+        const grouped = {};
 
-  data.data.forEach(row => {
-    const key = String(row[xAxis]);
-    const value = Number(row[yAxis]) || 0;
-    grouped[key] = (grouped[key] || 0) + value;
-  });
+        data.data.forEach(row => {
+          const key = String(row[xAxis]);
+          const value = Number(row[yAxis]) || 0;
+          grouped[key] = (grouped[key] || 0) + value;
+        });
 
-  // Convert to sortable array
-  const sorted = Object.entries(grouped)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6); // ✅ TOP 6 ONLY
+        // Convert to sortable array
+        const sorted = Object.entries(grouped)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6); // ✅ TOP 6 ONLY
 
-  if (sorted.length === 0) {
-    return <p className="text-center">No data for pie chart</p>;
-  }
+        if (sorted.length === 0) {
+          return <p className="text-center">No data for pie chart</p>;
+        }
 
-  const pieData = {
-    labels: sorted.map(item => item[0]),
-    datasets: [
-      {
-        data: sorted.map(item => item[1]),
-        backgroundColor: sorted.map(
-          (_, i) => `hsl(${i * 60}, 70%, 60%)`
-        ),
-      },
-    ],
+        const pieData = {
+          labels: sorted.map(item => item[0]),
+          datasets: [
+            {
+              data: sorted.map(item => item[1]),
+              backgroundColor: sorted.map(
+                (_, i) => `hsl(${i * 60}, 70%, 60%)`
+              ),
+            },
+          ],
+        };
+
+        return <Doughnut ref={chartRef} data={pieData} />;
+      }
+
+      case 'scatter': {
+        if (
+          typeof data.data[0][xAxis] !== "number" ||
+          typeof data.data[0][yAxis] !== "number"
+        ) {
+          return (
+            <p className="text-center text-muted-foreground">
+              Scatter plot requires numeric X and Y values
+            </p>
+          );
+        }
+
+        const scatterData = {
+          datasets: [
+            {
+              label: `${yAxis} vs ${xAxis}`,
+              data: data.data.slice(0, 50).map(row => ({
+                x: Number(row[xAxis]),
+                y: Number(row[yAxis]),
+              })),
+              backgroundColor: 'rgba(255,99,132,0.7)',
+            },
+          ],
+        };
+
+        return <Scatter ref={chartRef} data={scatterData} />;
+      }
+      default:
+        return <Bar data={chartData} options={chartOptions} />;
+    }
   };
-
-  return <Doughnut ref={chartRef} data={pieData} />;
-}
-
-   case 'scatter': {
-  if (
-    typeof data.data[0][xAxis] !== "number" ||
-    typeof data.data[0][yAxis] !== "number"
-  ) {
-    return (
-      <p className="text-center text-muted-foreground">
-        Scatter plot requires numeric X and Y values
-      </p>
-    );
-  }
-
-  const scatterData = {
-    datasets: [
-      {
-        label: `${yAxis} vs ${xAxis}`,
-        data: data.data.slice(0, 50).map(row => ({
-          x: Number(row[xAxis]),
-          y: Number(row[yAxis]),
-        })),
-        backgroundColor: 'rgba(255,99,132,0.7)',
-      },
-    ],
-  };
-
-  return <Scatter ref={chartRef} data={scatterData} />;
-}
-    default:
-      return <Bar data={chartData} options={chartOptions} />;
-  }
-};
 
 
   const downloadChart = (format) => {
-    alert("NEW DOWNLOAD FUNCTION HIT");
-  const canvas = chartContainerRef.current?.querySelector("canvas");
+    alert("CHART EXPORTED SUCCESSFULLY...");
+    const canvas = chartContainerRef.current?.querySelector("canvas");
 
-  if (!canvas) {
-    alert("Chart not ready yet. Please wait and try again.");
-    return;
-  }
+    if (!canvas) {
+      alert("Chart not ready yet. Please wait and try again.");
+      return;
+    }
 
-  const image = canvas.toDataURL("image/png");
+    const image = canvas.toDataURL("image/png");
 
-  if (format === "png") {
-    // ✅ SAFARI-SAFE METHOD
-    const win = window.open();
-    win.document.write(
-      `<iframe src="${image}" frameborder="0" 
+    if (format === "png") {
+      // ✅ SAFARI-SAFE METHOD
+      const win = window.open();
+      win.document.write(
+        `<iframe src="${image}" frameborder="0" 
         style="border:0; top:0; left:0; bottom:0; right:0; 
         width:100%; height:100%;" allowfullscreen></iframe>`
-    );
-  }
+      );
+    }
 
-  if (format === "pdf") {
-    const pdf = new jsPDF("landscape");
-    const w = pdf.internal.pageSize.getWidth();
-    const h = pdf.internal.pageSize.getHeight();
-    pdf.addImage(image, "PNG", 10, 10, w - 20, h - 20);
-    pdf.save(`${data.fileName}-${selectedChart}.pdf`);
-  }
-};
+    if (format === "pdf") {
+      const pdf = new jsPDF("landscape");
+      const w = pdf.internal.pageSize.getWidth();
+      const h = pdf.internal.pageSize.getHeight();
+      pdf.addImage(image, "PNG", 10, 10, w - 20, h - 20);
+      pdf.save(`${data.fileName}-${selectedChart}.pdf`);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -277,11 +286,10 @@ export const Dashboard = ({ data }) => {
               <button
                 key={type.id}
                 onClick={() => setSelectedChart(type.id)}
-                className={`flex flex-col items-center p-4 rounded-xl border transition-all duration-200 hover-scale ${
-                  selectedChart === type.id
+                className={`flex flex-col items-center p-4 rounded-xl border transition-all duration-200 hover-scale ${selectedChart === type.id
                     ? 'bg-gradient-to-br from-primary to-primary-hover text-primary-foreground border-primary shadow-lg'
                     : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground hover:bg-primary/5'
-                }`}
+                  }`}
               >
                 <Icon className="w-6 h-6 mb-2" />
                 <span className="text-sm font-medium">{type.label}</span>
@@ -294,8 +302,8 @@ export const Dashboard = ({ data }) => {
       {/* Chart Display */}
       <div className="bg-card border border-border rounded-xl p-6 shadow-lg">
         <div ref={chartContainerRef} className="h-96 w-full">
-  {renderChart()}
-</div>
+          {renderChart()}
+        </div>
       </div>
 
       {/* Data Controls */}
@@ -307,34 +315,34 @@ export const Dashboard = ({ data }) => {
               <label className="block text-sm font-medium text-foreground mb-2">
                 X-Axis (Categories)
               </label>
-             <select
-  value={xAxis}
-  onChange={(e) => setXAxis(e.target.value)}
-  className="w-full p-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary"
->
-  {columns.map(col => (
-    <option key={col} value={col}>
-      {col}
-    </option>
-  ))}
-</select>
+              <select
+                value={xAxis}
+                onChange={(e) => setXAxis(e.target.value)}
+                className="w-full p-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary"
+              >
+                {columns.map(col => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </select>
 
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Y-Axis (Values)
               </label>
-             <select
-  value={yAxis}
-  onChange={(e) => setYAxis(e.target.value)}
-  className="w-full p-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary"
->
-  {numericColumns.map(col => (
-    <option key={col} value={col}>
-      {col}
-    </option>
-  ))}
-</select>
+              <select
+                value={yAxis}
+                onChange={(e) => setYAxis(e.target.value)}
+                className="w-full p-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary"
+              >
+                {numericColumns.map(col => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </select>
 
             </div>
           </div>

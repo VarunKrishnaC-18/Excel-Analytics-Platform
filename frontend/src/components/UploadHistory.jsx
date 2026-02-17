@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { FileSpreadsheet, Calendar, Download, Trash2, Eye } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -17,7 +18,7 @@ export const UploadHistory = ({ uploads, onViewFile, onDeleteFile }) => {
         case 'name':
           return a.fileName.localeCompare(b.fileName);
         case 'size':
-          return parseInt(b.fileSize) - parseInt(a.fileSize);
+          return (parseFloat(b.fileSize) || 0) - (parseFloat(a.fileSize) || 0);
         default:
           return 0;
       }
@@ -31,6 +32,21 @@ export const UploadHistory = ({ uploads, onViewFile, onDeleteFile }) => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleDownload = (upload) => {
+    // In a real app, this might fetch from a server, 
+    // but here we'll just show a success message as a mock
+    // if the actual file binary isn't stored.
+    toast.success(`Downloading ${upload.fileName}...`);
+    // Mock download behavior
+    const element = document.createElement("a");
+    const file = new Blob([JSON.stringify(upload.data || {})], { type: 'application/json' });
+    element.href = URL.createObjectURL(file);
+    element.download = `${upload.fileName}.json`; // Downloading as JSON for demo
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   return (
@@ -79,7 +95,7 @@ export const UploadHistory = ({ uploads, onViewFile, onDeleteFile }) => {
         <div className="bg-card border border-border rounded-lg p-4">
           <h3 className="font-medium text-foreground">Storage Used</h3>
           <p className="text-2xl font-bold text-primary">
-            {uploads.reduce((sum, upload) => sum + parseInt(upload.fileSize), 0)} KB
+            {uploads.reduce((sum, upload) => sum + (parseFloat(upload.fileSize) || 0), 0).toFixed(1)} KB
           </p>
         </div>
       </div>
@@ -141,7 +157,11 @@ export const UploadHistory = ({ uploads, onViewFile, onDeleteFile }) => {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(upload)}
+                        >
                           <Download className="w-4 h-4" />
                         </Button>
                         <Button

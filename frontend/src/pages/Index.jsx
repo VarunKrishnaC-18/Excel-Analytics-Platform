@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "../components/Header";
-import { Navigation } from "../components/Navigation"; 
+import { Navigation } from "../components/Navigation";
 import { LandingPage } from "../components/LandingPage";
 import { DashboardHome } from "../components/DashboardHome";
 import { FileUpload } from "../components/FileUpload";
@@ -8,96 +8,152 @@ import { Dashboard } from "../components/Dashboard";
 import { UploadHistory } from "../components/UploadHistory";
 import { AITools } from "../components/AITools";
 import { AuthModal } from "../components/AuthModal";
+import { Settings } from "../components/Settings";
 import { toast } from "sonner";
 
 const Index = () => {
-  const [user, setUser] = useState(null);
-  const [activeSection, setActiveSection] = useState('dashboard');
+  // ✅ LOAD PERSISTED STATE
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem("analytics_user");
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [activeSection, setActiveSection] = useState("dashboard");
   const [currentData, setCurrentData] = useState(null);
-  const [uploadHistory, setUploadHistory] = useState([]);
+
+  const [uploadHistory, setUploadHistory] = useState(() => {
+    const saved = localStorage.getItem("analytics_history");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Mock stats for dashboard
-  const [stats] = useState({
-    totalFiles: 12,
-    chartsCreated: 28, 
-    aiInsights: 5,
-    processingTime: "2.3s"
+  // ✅ NUMERICAL STATS
+  const [stats, setStats] = useState(() => {
+    const saved = localStorage.getItem("analytics_stats");
+    return saved ? JSON.parse(saved) : {
+      totalFiles: 0,
+      chartsCreated: 0,
+      aiInsights: 0,
+      recentActivity: [],
+    };
   });
+
+  // ✅ PERSIST STATE ON CHANGES
+  useEffect(() => {
+    localStorage.setItem("analytics_user", JSON.stringify(user));
+  }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem("analytics_history", JSON.stringify(uploadHistory));
+  }, [uploadHistory]);
+
+  useEffect(() => {
+    localStorage.setItem("analytics_stats", JSON.stringify(stats));
+  }, [stats]);
 
   const handleLogin = (credentials) => {
-  setUser({
-    id: '1',
-    name: credentials.name 
-      || credentials.email.split('@')[0], // 👈 dynamic fallback
-    email: credentials.email
-  });
-};
+    setUser({
+      id: "1",
+      name: credentials.name || credentials.email.split("@")[0],
+      email: credentials.email,
+    });
+  };
 
   const handleRegister = (credentials) => {
-    // In production, this would call your registration API
     setUser({
-      id: '1',
+      id: "1",
       name: credentials.name,
-      email: credentials.email
+      email: credentials.email,
     });
-    toast.success('Account created successfully! 🚀');
+    toast.success("Account created successfully! 🚀");
   };
 
   const handleLogout = () => {
     setUser(null);
     setCurrentData(null);
-    setActiveSection('dashboard');
-    setShowAuthModal(false);
-    toast('See you soon! 👋');
+    setUploadHistory([]);
+    setStats({
+      totalFiles: 0,
+      chartsCreated: 0,
+      aiInsights: 0,
+      recentActivity: [],
+    });
+    localStorage.clear();
+    setActiveSection("dashboard");
+    toast("Settings reset and logged out! 👋");
   };
 
-  const handleGetStarted = () => {
-    setShowAuthModal(true);
-  };
-
+  // ✅ FILE UPLOAD → UPDATE FILE COUNT
   const handleFileProcessed = (data) => {
     setCurrentData(data);
-    
-    // Add to history
-    const historyItem = {
-      id: Date.now().toString(),
-      fileName: data.fileName,
-      uploadDate: data.uploadDate,
-      rows: data.data.length,
-      columns: Object.keys(data.data[0] || {}).length,
-      fileSize: (JSON.stringify(data.data).length / 1024).toFixed(1)
-    };
-    
-    setUploadHistory(prev => [historyItem, ...prev]);
-    setActiveSection('analytics');
+
+    setUploadHistory((prev) => [
+      {
+        id: Date.now().toString(),
+        fileName: data.fileName,
+        uploadDate: data.uploadDate || new Date().toISOString(),
+        rows: data.data.length,
+        columns: Object.keys(data.data[0] || {}).length,
+        fileSize: data.fileSize || "0",
+        data: data, // Keep the full data for viewing later
+      },
+      ...prev,
+    ]);
+
+    setStats((prev) => ({
+      ...prev,
+      totalFiles: prev.totalFiles + 1,
+      recentActivity: [
+        {
+          action: "Uploaded",
+          name: data.fileName,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.recentActivity,
+      ],
+    }));
+
+    setActiveSection("analytics");
     toast.success(`File ${data.fileName} processed successfully! ✨`);
   };
 
   const handleViewFile = (id) => {
-    // In production, this would fetch the file data
-    setActiveSection('analytics');
-    toast('File loaded for viewing 📊');
+    const upload = uploadHistory.find((u) => u.id === id);
+    if (upload && upload.data) {
+      setCurrentData(upload.data);
+      setActiveSection("analytics");
+      toast.info(`Viewing ${upload.fileName}`);
+    }
   };
 
   const handleDeleteFile = (id) => {
-    setUploadHistory(prev => prev.filter(item => item.id !== id));
-    toast('File deleted successfully 🗑️');
-  };
-
-  const handleNavigate = (section) => {
-    setActiveSection(section);
+    setUploadHistory((prev) => prev.filter((u) => u.id !== id));
+    toast.error("File removed from history");
   };
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'dashboard':
-        return <DashboardHome onNavigate={handleNavigate} stats={stats} />;
-      case 'upload':
+      case "dashboard":
+        return <DashboardHome onNavigate={setActiveSection} stats={stats} />;
+
+      case "upload":
         return <FileUpload onFileProcessed={handleFileProcessed} />;
-      case 'analytics':
-        return <Dashboard data={currentData} />;
-      case 'history':
+
+      case "analytics":
+        return (
+          <Dashboard
+            data={currentData}
+            onChartCreated={() =>
+              setStats((prev) => ({
+                ...prev,
+                chartsCreated: prev.chartsCreated + 1,
+              }))
+            }
+          />
+        );
+
+      case "history":
         return (
           <UploadHistory
             uploads={uploadHistory}
@@ -105,40 +161,42 @@ const Index = () => {
             onDeleteFile={handleDeleteFile}
           />
         );
-      case 'ai-tools':
-        return <AITools data={currentData} />;
-      case 'settings':
-  return (
-    <div className="max-w-xl space-y-6">
-      <h2 className="text-2xl font-bold">Settings</h2>
 
-      <div className="flex justify-between items-center">
-        <span>Dark Mode</span>
-        <input type="checkbox" />
-      </div>
+      case "ai-tools":
+        return (
+          <AITools
+            data={currentData}
+            onInsightGenerated={() =>
+              setStats((prev) => ({
+                ...prev,
+                aiInsights: prev.aiInsights + 1,
+              }))
+            }
+          />
+        );
 
-      <div className="flex justify-between items-center">
-        <span>Enable Tooltips</span>
-        <input type="checkbox" defaultChecked />
-      </div>
-
-      <div className="flex justify-between items-center">
-        <span>Auto Chart Scaling</span>
-        <input type="checkbox" defaultChecked />
-      </div>
-    </div>
-  );
+      case "settings":
+        return (
+          <Settings
+            user={user}
+            onClearData={handleLogout}
+            onResetHistory={() => {
+              setUploadHistory([]);
+              setStats(prev => ({ ...prev, recentActivity: [] }));
+              toast.info("History cleared successfully");
+            }}
+          />
+        );
 
       default:
-        return <DashboardHome onNavigate={handleNavigate} stats={stats} />;
+        return <DashboardHome onNavigate={setActiveSection} stats={stats} />;
     }
   };
 
-  // Show landing page if user is not logged in
   if (!user) {
     return (
       <>
-        <LandingPage onGetStarted={handleGetStarted} />
+        <LandingPage onGetStarted={() => setShowAuthModal(true)} />
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
@@ -149,30 +207,20 @@ const Index = () => {
     );
   }
 
-  // Show main dashboard if user is logged in
   return (
     <div className="min-h-screen bg-background">
-      <Header user={user} onLogout={handleLogout} />
-      
+      <Header
+        user={user}
+        onLogout={handleLogout}
+        onSettingsClick={() => setActiveSection("settings")}
+      />
       <div className="flex">
-        <Navigation 
+        <Navigation
           activeSection={activeSection}
           onSectionChange={setActiveSection}
         />
-        
-        <main className="flex-1 p-8 bg-gradient-to-br from-background to-primary/5">
-          <div className="animate-fade-in">
-            {renderContent()}
-          </div>
-        </main>
+        <main className="flex-1 p-8">{renderContent()}</main>
       </div>
-
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-      />
     </div>
   );
 };

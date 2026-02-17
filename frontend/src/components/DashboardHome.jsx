@@ -1,15 +1,13 @@
-import { 
-  TrendingUp, 
-  FileSpreadsheet, 
-  BarChart3, 
+import {
+  TrendingUp,
+  FileSpreadsheet,
+  BarChart3,
   Brain,
   Upload,
   Activity,
-  Users,
   Clock,
-  Zap
+  Zap,
 } from "lucide-react";
-import { Button } from "./ui/button";
 
 export const DashboardHome = ({ onNavigate, stats }) => {
   const quickActions = [
@@ -17,42 +15,31 @@ export const DashboardHome = ({ onNavigate, stats }) => {
       title: "Upload New File",
       description: "Import Excel or CSV files",
       icon: Upload,
-      action: () => onNavigate('upload'),
+      action: () => onNavigate("upload"),
       color: "bg-blue-500",
-      hoverColor: "hover:bg-blue-600"
+      hoverColor: "hover:bg-blue-600",
     },
     {
-      title: "View Analytics", 
+      title: "View Analytics",
       description: "Explore your data visualizations",
       icon: BarChart3,
-      action: () => onNavigate('analytics'),
+      action: () => onNavigate("analytics"),
       color: "bg-green-500",
-      hoverColor: "hover:bg-green-600"
+      hoverColor: "hover:bg-green-600",
     },
-    {
-      title: "AI Insights",
-      description: "Get intelligent recommendations", 
-      icon: Brain,
-      action: () => onNavigate('ai-tools'),
-      color: "bg-purple-500",
-      hoverColor: "hover:bg-purple-600"
-    },
+    
     {
       title: "File History",
       description: "Manage uploaded files",
       icon: FileSpreadsheet,
-      action: () => onNavigate('history'),
-      color: "bg-orange-500", 
-      hoverColor: "hover:bg-orange-600"
-    }
+      action: () => onNavigate("history"),
+      color: "bg-orange-500",
+      hoverColor: "hover:bg-orange-600",
+    },
   ];
 
-  const recentActivity = [
-    { action: "Uploaded", file: "Sales_Q4_2024.xlsx", time: "2 hours ago", type: "upload" },
-    { action: "Generated", file: "Revenue Chart", time: "3 hours ago", type: "chart" },
-    { action: "AI Analysis", file: "Market_Data.csv", time: "5 hours ago", type: "ai" },
-    { action: "Exported", file: "Performance Dashboard", time: "1 day ago", type: "export" }
-  ];
+  // ✅ SAFE BACKEND DATA
+  const recentActivity = stats?.recentActivity || [];
 
   return (
     <div className="space-y-8">
@@ -77,74 +64,37 @@ export const DashboardHome = ({ onNavigate, stats }) => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Files</p>
-              <p className="text-2xl font-bold text-foreground">{stats?.totalFiles || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
-              <FileSpreadsheet className="w-6 h-6 text-blue-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-500">+12% from last month</span>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Charts Created</p>
-              <p className="text-2xl font-bold text-foreground">{stats?.chartsCreated || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-green-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-500">+8% from last week</span>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">AI Insights</p>
-              <p className="text-2xl font-bold text-foreground">{stats?.aiInsights || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center">
-              <Brain className="w-6 h-6 text-purple-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <Zap className="w-4 h-4 text-yellow-500 mr-1" />
-            <span className="text-sm text-yellow-500">5 new insights</span>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Processing Time</p>
-              <p className="text-2xl font-bold text-foreground">2.3s</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-orange-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-            <span className="text-sm text-green-500">15% faster</span>
-          </div>
-        </div>
+        <StatCard
+          title="Total Files"
+          value={stats?.totalFiles || 0}
+          icon={FileSpreadsheet}
+          color="blue"
+        />
+        <StatCard
+          title="Charts Created"
+          value={stats?.chartsCreated || 0}
+          icon={BarChart3}
+          color="green"
+        />
+        <StatCard
+          title="AI Insights"
+          value={stats?.aiInsights || 0}
+          icon={Brain}
+          color="purple"
+        />
+        <StatCard
+          title="Processing Time"
+          value="2.3s"
+          icon={Clock}
+          color="orange"
+        />
       </div>
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-6">Quick Actions</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">
+          Quick Actions
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
@@ -152,9 +102,11 @@ export const DashboardHome = ({ onNavigate, stats }) => {
               <button
                 key={index}
                 onClick={action.action}
-                className={`group p-6 rounded-xl border border-border bg-card hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105`}
+                className="group p-6 rounded-xl border border-border bg-card hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105"
               >
-                <div className={`w-12 h-12 ${action.color} ${action.hoverColor} rounded-lg flex items-center justify-center mb-4 transition-colors`}>
+                <div
+                  className={`w-12 h-12 ${action.color} ${action.hoverColor} rounded-lg flex items-center justify-center mb-4 transition-colors`}
+                >
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
@@ -173,56 +125,84 @@ export const DashboardHome = ({ onNavigate, stats }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Activity */}
         <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  activity.type === 'upload' ? 'bg-blue-500/10' :
-                  activity.type === 'chart' ? 'bg-green-500/10' :
-                  activity.type === 'ai' ? 'bg-purple-500/10' : 'bg-orange-500/10'
-                }`}>
-                  {activity.type === 'upload' && <Upload className="w-4 h-4 text-blue-500" />}
-                  {activity.type === 'chart' && <BarChart3 className="w-4 h-4 text-green-500" />}
-                  {activity.type === 'ai' && <Brain className="w-4 h-4 text-purple-500" />}
-                  {activity.type === 'export' && <FileSpreadsheet className="w-4 h-4 text-orange-500" />}
+          <h3 className="text-lg font-semibold text-foreground mb-4">
+            Recent Activity
+          </h3>
+
+          {recentActivity.length ? (
+            <div className="space-y-4">
+              {recentActivity.map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Activity className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {activity.action}{" "}
+                      <span className="text-primary">
+                        {activity.name || "Item"}
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(activity.createdAt).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">
-                    {activity.action} <span className="text-primary">{activity.file}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No recent activity
+            </p>
+          )}
         </div>
 
-        {/* Tips & Recommendations */}
+        {/* Tips */}
         <div className="bg-gradient-to-br from-primary/5 to-accent/5 border border-border rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Tips & Recommendations</h3>
-          <div className="space-y-4">
-            <div className="p-4 bg-card/80 rounded-lg border border-border/50">
-              <h4 className="font-medium text-foreground mb-1">💡 Pro Tip</h4>
-              <p className="text-sm text-muted-foreground">
-                Use AI Insights to automatically identify trends in your data and get actionable recommendations.
-              </p>
-            </div>
-            <div className="p-4 bg-card/80 rounded-lg border border-border/50">
-              <h4 className="font-medium text-foreground mb-1">🎯 Best Practice</h4>
-              <p className="text-sm text-muted-foreground">
-                Clean your data before uploading for better chart accuracy and AI analysis results.
-              </p>
-            </div>
-            <div className="p-4 bg-card/80 rounded-lg border border-border/50">
-              <h4 className="font-medium text-foreground mb-1">⚡ Quick Start</h4>
-              <p className="text-sm text-muted-foreground">
-                Try the 3D visualization feature for impressive presentations of your data insights.
-              </p>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-4">
+            Tips & Recommendations
+          </h3>
+
+          <Tip
+            title="💡 Pro Tip"
+            text="Use AI Insights to automatically identify trends in your data."
+          />
+          <Tip
+            title="🎯 Best Practice"
+            text="Clean your data before uploading for better accuracy."
+          />
+          <Tip
+            title="⚡ Quick Start"
+            text="Try 3D visualization for impressive presentations."
+          />
         </div>
       </div>
     </div>
   );
 };
+
+/* ---------- SMALL REUSABLE COMPONENTS ---------- */
+
+const StatCard = ({ title, value, icon: Icon, color }) => (
+  <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-200">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <p className="text-2xl font-bold text-foreground">{value}</p>
+      </div>
+      <div className={`w-12 h-12 bg-${color}-500/10 rounded-lg flex items-center justify-center`}>
+        <Icon className={`w-6 h-6 text-${color}-500`} />
+      </div>
+    </div>
+  </div>
+);
+
+const Tip = ({ title, text }) => (
+  <div className="p-4 bg-card/80 rounded-lg border border-border/50 mb-3">
+    <h4 className="font-medium text-foreground mb-1">{title}</h4>
+    <p className="text-sm text-muted-foreground">{text}</p>
+  </div>
+);

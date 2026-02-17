@@ -102,14 +102,7 @@ export const LandingPage = ({ onGetStarted }) => {
                 Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="text-lg px-8 py-6 border-2 hover:bg-primary/5"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Watch Demo
-              </Button>
+             
             </div>
 
             {/* Stats */}
@@ -176,7 +169,7 @@ export const LandingPage = ({ onGetStarted }) => {
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
                 Transform spreadsheets into interactive dashboards with beautiful charts, 
-                real-time analytics, and AI-generated insights that reveal hidden patterns.
+                real-time analytics, and insights that reveal hidden patterns.
               </p>
               
               <div className="space-y-4">
@@ -233,39 +226,7 @@ export const LandingPage = ({ onGetStarted }) => {
         </div>
       </div>
 
-      {/* Testimonials */}
-      <div className="py-20 bg-card/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Trusted by Data Professionals
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              See what our users say about their experience
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-card rounded-xl p-6 shadow-lg border border-border">
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-yellow-500 fill-current" />
-                  ))}
-                </div>
-                <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
-                <div>
-                  <div className="font-semibold text-foreground">{testimonial.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {testimonial.role} at {testimonial.company}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
+      
       {/* CTA Section */}
       <div className="py-20 bg-gradient-to-r from-primary to-primary-hover">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

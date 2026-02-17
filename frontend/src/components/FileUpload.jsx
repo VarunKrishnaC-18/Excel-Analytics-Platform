@@ -23,7 +23,7 @@ export const FileUpload = ({ onFileProcessed }) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
@@ -45,28 +45,49 @@ export const FileUpload = ({ onFileProcessed }) => {
     setProcessing(true);
 
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      // Simulate processing delay for better UX
+      const rows = jsonData.length;
+      const columns = Object.keys(jsonData[0] || {}).length;
+      const fileSize = (file.size / 1024).toFixed(1);
+
+      // ✅ UPDATE UI FIRST (THIS WAS WORKING BEFORE)
       setTimeout(() => {
         onFileProcessed({
           fileName: file.name,
           data: jsonData,
           sheets: workbook.SheetNames,
-          uploadDate: new Date().toISOString()
+          uploadDate: new Date().toISOString(),
+          fileSize: fileSize,
         });
         setProcessing(false);
-      }, 2000);
+      }, 1500);
+
+      // 🔥 BACKEND SYNC (NON-BLOCKING)
+      fetch("http://localhost:5001/api/files/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          rows,
+          columns,
+          fileSize,
+        }),
+      }).catch(err =>
+        console.error("Backend file log failed:", err)
+      );
+
     } catch (error) {
       console.error("Error processing file:", error);
       setProcessing(false);
       alert("Error processing file. Please try again.");
     }
   };
+
 
   const removeFile = () => {
     setUploadedFile(null);
@@ -92,11 +113,10 @@ export const FileUpload = ({ onFileProcessed }) => {
       {/* Upload Area */}
       {!uploadedFile ? (
         <div
-          className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
-            dragActive
+          className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${dragActive
               ? 'border-primary bg-primary/5 scale-105'
               : 'border-border hover:border-primary/50 hover:bg-primary/5'
-          }`}
+            }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
@@ -131,9 +151,8 @@ export const FileUpload = ({ onFileProcessed }) => {
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
-                processing ? 'bg-primary/10' : 'bg-success/10'
-              }`}>
+              <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${processing ? 'bg-primary/10' : 'bg-success/10'
+                }`}>
                 {processing ? (
                   <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
                 ) : (
@@ -147,7 +166,7 @@ export const FileUpload = ({ onFileProcessed }) => {
                 </p>
                 {processing && (
                   <div className="w-full bg-muted rounded-full h-2 mt-2">
-                    <div className="bg-primary h-2 rounded-full animate-pulse" style={{width: '75%'}}></div>
+                    <div className="bg-primary h-2 rounded-full animate-pulse" style={{ width: '75%' }}></div>
                   </div>
                 )}
               </div>
@@ -170,7 +189,7 @@ export const FileUpload = ({ onFileProcessed }) => {
           <h3 className="font-semibold text-foreground mb-2">Multiple Formats</h3>
           <p className="text-sm text-muted-foreground">.xlsx, .xls, .csv files supported</p>
         </div>
-        
+
         <div className="bg-card border border-border rounded-xl p-6 text-center hover:shadow-lg transition-all duration-200 hover-scale">
           <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
             <span className="text-green-500 font-bold text-xl">∞</span>
@@ -178,7 +197,7 @@ export const FileUpload = ({ onFileProcessed }) => {
           <h3 className="font-semibold text-foreground mb-2">No Size Limits</h3>
           <p className="text-sm text-muted-foreground">Process large datasets efficiently</p>
         </div>
-        
+
         <div className="bg-card border border-border rounded-xl p-6 text-center hover:shadow-lg transition-all duration-200 hover-scale">
           <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
             <span className="text-purple-500 font-bold text-xl">⚡</span>

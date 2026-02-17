@@ -1,7 +1,7 @@
 import { User, LogOut, Settings } from "lucide-react";
 import { Button } from "./ui/button";
 
-export const Header = ({ user, onLogout }) => {
+export const Header = ({ user, onLogout, onSettingsClick }) => {
   return (
     <header className="bg-card border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -9,11 +9,11 @@ export const Header = ({ user, onLogout }) => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-                Zidio Development
+                VK18..
               </h1>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             {user ? (
               <>
@@ -26,7 +26,7 @@ export const Header = ({ user, onLogout }) => {
                     <div className="text-muted-foreground">{user.email}</div>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => onSettingsClick()}>
                   <Settings className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={onLogout}>
