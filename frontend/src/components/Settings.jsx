@@ -1,6 +1,5 @@
 import { User, Shield, Trash2, Database, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
-import { toast } from "sonner";
 
 export const Settings = ({ user, onClearData, onResetHistory }) => {
     return (

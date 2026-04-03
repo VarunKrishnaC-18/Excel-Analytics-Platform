@@ -10,14 +10,6 @@ function genId() {
   return count.toString();
 }
 
-// Action types
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-};
-
 // Toast queue state
 const toastTimeouts = new Map();
 const listeners = [];

@@ -1,12 +1,10 @@
 import {
-  TrendingUp,
   FileSpreadsheet,
   BarChart3,
   Brain,
   Upload,
   Activity,
   Clock,
-  Zap,
 } from "lucide-react";
 
 export const DashboardHome = ({ onNavigate, stats }) => {

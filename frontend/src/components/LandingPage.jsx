@@ -7,10 +7,6 @@ import {
   CheckCircle, 
   Star,
   ArrowRight,
-  Play,
-  Users,
-  TrendingUp,
-  FileSpreadsheet
 } from "lucide-react";
 import { Button } from "./ui/button";
 
