@@ -40,30 +40,6 @@ export const LandingPage = ({ onGetStarted }) => {
     }
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      role: "Data Analyst",
-      company: "TechCorp",
-      content: "This platform transformed how we analyze our Excel data. The AI insights are incredible!",
-      rating: 5
-    },
-    {
-      name: "Mike Chen", 
-      role: "Business Manager",
-      company: "StartupXYZ",
-      content: "Easy to use and powerful visualizations. Cut our reporting time by 80%.",
-      rating: 5
-    },
-    {
-      name: "Emma Davis",
-      role: "Financial Analyst", 
-      company: "FinanceInc",
-      content: "The 3D charts and automated insights give us perspectives we never had before.",
-      rating: 5
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
