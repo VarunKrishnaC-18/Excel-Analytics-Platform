@@ -25,7 +25,6 @@ export const DashboardHome = ({ onNavigate, stats }) => {
       color: "bg-green-500",
       hoverColor: "hover:bg-green-600",
     },
-    
     {
       title: "File History",
       description: "Manage uploaded files",
@@ -38,6 +37,18 @@ export const DashboardHome = ({ onNavigate, stats }) => {
 
   // ✅ SAFE BACKEND DATA
   const recentActivity = stats?.recentActivity || [];
+
+  // ✅ TIME FORMAT FUNCTION
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diff = Math.floor((now - past) / 1000);
+
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    return `${Math.floor(diff / 86400)} days ago`;
+  };
 
   return (
     <div className="space-y-8">
@@ -62,30 +73,10 @@ export const DashboardHome = ({ onNavigate, stats }) => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Files"
-          value={stats?.totalFiles || 0}
-          icon={FileSpreadsheet}
-          color="blue"
-        />
-        <StatCard
-          title="Charts Created"
-          value={stats?.chartsCreated || 0}
-          icon={BarChart3}
-          color="green"
-        />
-        <StatCard
-          title="AI Insights"
-          value={stats?.aiInsights || 0}
-          icon={Brain}
-          color="purple"
-        />
-        <StatCard
-          title="Processing Time"
-          value="2.3s"
-          icon={Clock}
-          color="orange"
-        />
+        <StatCard title="Total Files" value={stats?.totalFiles || 0} icon={FileSpreadsheet} color="blue" />
+        <StatCard title="Charts Created" value={stats?.chartsCreated || 0} icon={BarChart3} color="green" />
+        <StatCard title="AI Insights" value={stats?.aiInsights || 0} icon={Brain} color="purple" />
+        <StatCard title="Processing Time" value="2.3s" icon={Clock} color="orange" />
       </div>
 
       {/* Quick Actions */}
@@ -102,9 +93,7 @@ export const DashboardHome = ({ onNavigate, stats }) => {
                 onClick={action.action}
                 className="group p-6 rounded-xl border border-border bg-card hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105"
               >
-                <div
-                  className={`w-12 h-12 ${action.color} ${action.hoverColor} rounded-lg flex items-center justify-center mb-4 transition-colors`}
-                >
+                <div className={`w-12 h-12 ${action.color} ${action.hoverColor} rounded-lg flex items-center justify-center mb-4 transition-colors`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
@@ -121,7 +110,8 @@ export const DashboardHome = ({ onNavigate, stats }) => {
 
       {/* Recent Activity & Tips */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Activity */}
+
+        {/* 🔥 UPDATED Recent Activity */}
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">
             Recent Activity
@@ -129,27 +119,48 @@ export const DashboardHome = ({ onNavigate, stats }) => {
 
           {recentActivity.length ? (
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div
-                  key={index}
-                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Activity className="w-4 h-4 text-primary" />
+              {recentActivity.map((activity, index) => {
+                let iconBg = "bg-primary/10";
+                let iconColor = "text-primary";
+
+                if (activity.type === "upload") {
+                  iconBg = "bg-blue-100";
+                  iconColor = "text-blue-600";
+                } else if (activity.type === "chart") {
+                  iconBg = "bg-green-100";
+                  iconColor = "text-green-600";
+                } else if (activity.type === "ai") {
+                  iconBg = "bg-purple-100";
+                  iconColor = "text-purple-600";
+                } else if (activity.type === "export") {
+                  iconBg = "bg-orange-100";
+                  iconColor = "text-orange-600";
+                }
+
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className={`w-8 h-8 rounded-full ${iconBg} flex items-center justify-center`}>
+                      <Activity className={`w-4 h-4 ${iconColor}`} />
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {activity.action}{" "}
+                        <span className="text-primary">
+                          {activity.name || "Item"}
+                        </span>
+                      </p>
+
+                      <p className="text-xs text-muted-foreground">
+                        {getTimeAgo(activity.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {activity.action}{" "}
-                      <span className="text-primary">
-                        {activity.name || "Item"}
-                      </span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(activity.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -164,25 +175,16 @@ export const DashboardHome = ({ onNavigate, stats }) => {
             Tips & Recommendations
           </h3>
 
-          <Tip
-            title="💡 Pro Tip"
-            text="Use AI Insights to automatically identify trends in your data."
-          />
-          <Tip
-            title="🎯 Best Practice"
-            text="Clean your data before uploading for better accuracy."
-          />
-          <Tip
-            title="⚡ Quick Start"
-            text="Try 3D visualization for impressive presentations."
-          />
+          <Tip title="💡 Pro Tip" text="Use AI Insights to automatically identify trends in your data." />
+          <Tip title="🎯 Best Practice" text="Clean your data before uploading for better accuracy." />
+          <Tip title="⚡ Quick Start" text="Try 3D visualization for impressive presentations." />
         </div>
       </div>
     </div>
   );
 };
 
-/* ---------- SMALL REUSABLE COMPONENTS ---------- */
+/* ---------- SMALL COMPONENTS ---------- */
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-200">
