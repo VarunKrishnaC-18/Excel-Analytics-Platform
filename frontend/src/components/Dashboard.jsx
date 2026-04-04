@@ -227,17 +227,6 @@ export const Dashboard = ({ data }) => {
   // ── Insights ──────────────────────────────────────────────────
   const insights = useMemo(() => computeInsights(data?.data, yAxis), [data?.data, yAxis]);
 
-  // ── Guard ─────────────────────────────────────────────────────
-  if (!data?.data?.length) {
-    return (
-      <div className="text-center py-16 space-y-4">
-        <BarChart3 className="w-12 h-12 text-primary mx-auto opacity-40" />
-        <h3 className="text-xl font-semibold text-foreground">No Data Available</h3>
-        <p className="text-muted-foreground">Upload a file to start analysing</p>
-      </div>
-    );
-  }
-
   // ── Chart data builders ───────────────────────────────────────
   const buildBarLine = useCallback(() => {
     const labels = data.data.slice(0, 15).map(r => String(r[xAxis] ?? "—"));
@@ -395,6 +384,17 @@ export const Dashboard = ({ data }) => {
   const trendColor = insights?.trend === "up"   ? "text-emerald-500"
                    : insights?.trend === "down" ? "text-red-500"
                    : "text-gray-400";
+
+  // ── Guard ─────────────────────────────────────────────────────
+  if (!data?.data?.length) {
+    return (
+      <div className="text-center py-16 space-y-4">
+        <BarChart3 className="w-12 h-12 text-primary mx-auto opacity-40" />
+        <h3 className="text-xl font-semibold text-foreground">No Data Available</h3>
+        <p className="text-muted-foreground">Upload a file to start analysing</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
