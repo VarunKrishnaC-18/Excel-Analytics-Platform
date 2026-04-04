@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Brain, Sparkles, TrendingUp, FileText, Loader } from "lucide-react";
 import { Button } from "./ui/button";
+import { recordInsightGenerated } from "../lib/analyticsStats";
 
-export const AITools = ({ data }) => {
+export const AITools = ({ data, onInsightGenerated }) => {
   const [selectedTool, setSelectedTool] = useState("summary");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
@@ -109,6 +110,9 @@ export const AITools = ({ data }) => {
       }
 
       setResult(mockResult);
+      const insightKey = `${data.fileName || "dataset"}:${selectedTool}:${Date.now()}`;
+      recordInsightGenerated(insightKey, `${selectedTool} analysis`);
+      if (typeof onInsightGenerated === "function") onInsightGenerated();
       setLoading(false);
     }, 2000);
   };

@@ -8,16 +8,7 @@ import {
   Clock,
   TrendingUp,
 } from "lucide-react";
-
-// ── localStorage helpers ───────────────────────────────────────────
-const getStats = () =>
-  JSON.parse(localStorage.getItem("stats")) || {
-    totalFiles:     0,
-    chartsCreated:  0,
-    aiInsights:     0,
-    recentActivity: [],
-    lastChartType:  null,
-  };
+import { getStats } from "../lib/analyticsStats";
 
 // ── Relative time formatter ────────────────────────────────────────
 const getTimeAgo = (dateStr) => {

@@ -2,39 +2,85 @@ import { useState, useRef, useCallback } from "react";
 import { Upload, FileSpreadsheet, X, CheckCircle, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import * as XLSX from "xlsx";
+import { recordFileUpload, recordActivity } from "../lib/analyticsStats";
 
-// ── localStorage helpers (same key as Dashboard / DashboardHome) ──
-const getStats = () =>
-  JSON.parse(localStorage.getItem("stats")) || {
-    totalFiles:     0,
-    chartsCreated:  0,
-    aiInsights:     0,
-    recentActivity: [],
-    lastChartType:  null,
-  };
+const NULL_LIKE_VALUES = new Set(["", "null", "undefined", "n/a", "na", "-"]);
 
-const recordFileUpload = (fileName) => {
-  const stats = getStats();
+const normalizeCellValue = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "boolean") return value;
+  if (value instanceof Date) return value.toISOString();
 
-  // Prevent duplicate count if same file uploaded within 5 seconds
-  const last = stats.recentActivity[0];
-  const now  = Date.now();
-  const isDup = last &&
-    last.type   === "upload" &&
-    last.name   === fileName &&
-    now - new Date(last.createdAt).getTime() < 5000;
+  const raw = String(value).trim();
+  if (NULL_LIKE_VALUES.has(raw.toLowerCase())) return null;
 
-  if (!isDup) {
-    stats.totalFiles += 1;
-    stats.recentActivity.unshift({
-      type:      "upload",
-      action:    "Uploaded",
-      name:      fileName,
-      createdAt: new Date().toISOString(),
-    });
-    if (stats.recentActivity.length > 50) stats.recentActivity.length = 50;
-    localStorage.setItem("stats", JSON.stringify(stats));
+  const compact = raw.replace(/,/g, "");
+  if (/^[+-]?\d+(\.\d+)?$/.test(compact)) {
+    const asNumber = Number(compact);
+    if (Number.isFinite(asNumber)) return asNumber;
   }
+  return raw;
+};
+
+const isRowEmpty = (row) => Object.values(row).every((value) => value == null || value === "");
+
+const cleanRows = (rows) => {
+  const seen = new Set();
+  const cleaned = [];
+  let removedNullRows = 0;
+  let removedDuplicates = 0;
+
+  rows.forEach((row) => {
+    const normalized = Object.fromEntries(
+      Object.entries(row).map(([key, value]) => [key, normalizeCellValue(value)])
+    );
+
+    if (isRowEmpty(normalized)) {
+      removedNullRows += 1;
+      return;
+    }
+
+    const signature = JSON.stringify(normalized);
+    if (seen.has(signature)) {
+      removedDuplicates += 1;
+      return;
+    }
+
+    seen.add(signature);
+    cleaned.push(normalized);
+  });
+
+  return {
+    cleaned,
+    report: {
+      originalRows: rows.length,
+      cleanedRows: cleaned.length,
+      removedNullRows,
+      removedDuplicates,
+    },
+  };
+};
+
+const parseWorkbookData = async (file) => {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+
+  if (extension === "csv") {
+    const text = await file.text();
+    if (!text.trim()) {
+      throw new Error("This CSV file is empty. Please upload a file with headers and data rows.");
+    }
+    const workbook = XLSX.read(text, { type: "string", raw: true });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: null, raw: true, blankrows: false });
+    return { workbook, rows };
+  }
+
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: "array", cellDates: true, raw: true });
+  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(worksheet, { defval: null, raw: true, blankrows: false });
+  return { workbook, rows };
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -84,18 +130,22 @@ export const FileUpload = ({ onFileProcessed }) => {
     setProgress(10);
 
     try {
-      const buffer  = await file.arrayBuffer();
+      const { workbook, rows } = await parseWorkbookData(file);
       setProgress(40);
-
-      const workbook  = XLSX.read(buffer, { cellDates: true });
       setProgress(70);
 
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData  = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      if (!workbook.SheetNames.length || !rows.length) {
+        throw new Error("The file appears empty or has no readable data rows.");
+      }
 
-      if (!jsonData.length) {
-        throw new Error("The file appears to be empty or has no readable rows.");
+      const { cleaned, report } = cleanRows(rows);
+      if (!cleaned.length) {
+        throw new Error("No usable rows found after cleaning. Check for empty rows, duplicates, or invalid values.");
+      }
+
+      const firstRow = cleaned[0] || {};
+      if (!Object.keys(firstRow).length) {
+        throw new Error("Invalid format: header row not detected. Ensure your first row contains column names.");
       }
 
       const fileSize = (file.size / 1024).toFixed(1);
@@ -103,6 +153,7 @@ export const FileUpload = ({ onFileProcessed }) => {
 
       // Record in localStorage BEFORE calling onFileProcessed
       recordFileUpload(file.name);
+      recordActivity("upload", "Cleaned", `${report.removedNullRows + report.removedDuplicates} rows removed`);
 
       // Simulate brief visual pause so progress bar reaches 100 %
       setTimeout(() => {
@@ -110,10 +161,11 @@ export const FileUpload = ({ onFileProcessed }) => {
         setTimeout(() => {
           onFileProcessed({
             fileName:   file.name,
-            data:       jsonData,
+            data:       cleaned,
             sheets:     workbook.SheetNames,
             uploadDate: new Date().toISOString(),
             fileSize,
+            cleaningReport: report,
           });
           setProcessing(false);
         }, 300);
@@ -125,15 +177,16 @@ export const FileUpload = ({ onFileProcessed }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fileName: file.name,
-          rows:     jsonData.length,
-          columns:  Object.keys(jsonData[0] || {}).length,
+          rows:     cleaned.length,
+          columns:  Object.keys(cleaned[0] || {}).length,
           fileSize,
         }),
       }).catch(() => {});
 
     } catch (err) {
       console.error("Error processing file:", err);
-      setError(err.message || "Error processing file. Please try again.");
+      const message = err?.message || "Error processing file. Please try again.";
+      setError(message.includes("Unsupported") ? "Unsupported format. Please upload .xlsx, .xls, or .csv." : message);
       setProcessing(false);
       setProgress(0);
       setUploadedFile(null);
