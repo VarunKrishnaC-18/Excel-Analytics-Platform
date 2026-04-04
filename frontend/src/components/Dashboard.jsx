@@ -17,6 +17,7 @@ import {
 import {
   Download,
   Eye,
+  FileText,
   BarChart3,
   LineChart,
   PieChart,
@@ -271,6 +272,38 @@ export const Dashboard = ({ data, onChartCreated }) => {
 
   const insights = useMemo(() => computeInsights(filteredRows, yAxis), [filteredRows, yAxis]);
 
+  const executiveSummary = useMemo(() => {
+    if (!insights) return "";
+    const recommendation =
+      insights.trend === "up"
+        ? "Scale what is working and monitor growth consistency."
+        : insights.trend === "down"
+          ? "Investigate recent decline and focus on root causes for recovery."
+          : "Performance is stable; optimize segments with highest variance.";
+
+    return [
+      "Executive Summary",
+      `File: ${data?.fileName || "Dataset"}`,
+      `Rows analyzed: ${filteredRows.length.toLocaleString()} / ${rows.length.toLocaleString()}`,
+      `Columns: ${columns.length} (${numericColumns.length} numeric)`,
+      `Primary metric: ${yAxis || "N/A"}`,
+      `Trend: ${insights.trend.toUpperCase()}`,
+      `Max: ${formatTooltipNumber(insights.max)}`,
+      `Min: ${formatTooltipNumber(insights.min)}`,
+      `Average: ${formatTooltipNumber(insights.avg)}`,
+      `Outliers detected: ${insights.outlierCount}`,
+      `Recommendation: ${recommendation}`,
+    ].join("\n");
+  }, [
+    insights,
+    data?.fileName,
+    filteredRows.length,
+    rows.length,
+    columns.length,
+    numericColumns.length,
+    yAxis,
+  ]);
+
   useEffect(() => {
     if (!insights || !yAxis || !data?.fileName) return;
     const insightKey = `${data.fileName}:${yAxis}:${filteredRows.length}:${insights.trend}:${insights.outlierCount}`;
@@ -473,6 +506,18 @@ export const Dashboard = ({ data, onChartCreated }) => {
     URL.revokeObjectURL(url);
   }, [columns, filteredRows, data?.fileName]);
 
+  const downloadExecutiveSummary = useCallback(() => {
+    if (!executiveSummary) return;
+    const blob = new Blob([executiveSummary], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${data?.fileName || "dataset"}-executive-summary.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    recordActivity("action", "Exported", "executive summary");
+  }, [executiveSummary, data?.fileName]);
+
   const chartTypes = [
     { id: "bar", label: "Bar Chart", icon: BarChart3 },
     { id: "line", label: "Line Chart", icon: LineChart },
@@ -515,6 +560,9 @@ export const Dashboard = ({ data, onChartCreated }) => {
           )}
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={downloadExecutiveSummary}>
+            <FileText className="w-4 h-4 mr-1" /> Summary
+          </Button>
           <Button variant="outline" size="sm" onClick={() => downloadChart("png")}>
             <Download className="w-4 h-4 mr-1" /> PNG
           </Button>
@@ -551,6 +599,17 @@ export const Dashboard = ({ data, onChartCreated }) => {
             <p className="text-sm text-foreground">
               Insight summary: <span className="font-medium">{yAxis || "selected metric"}</span> is showing a <span className="font-medium uppercase">{insights.trend}</span> trend,
               with {insights.outlierCount} outlier{insights.outlierCount !== 1 ? "s" : ""} detected.
+            </p>
+          </div>
+
+          <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+            <p className="text-sm font-medium text-foreground">Executive takeaway</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {insights.trend === "up"
+                ? "Momentum is positive. Consider scaling high-performing segments and preserving quality controls."
+                : insights.trend === "down"
+                  ? "Trend is weakening. Prioritize investigating recent changes and corrective actions."
+                  : "Trend is stable. Focus on reducing variability and improving top-decile contributors."}
             </p>
           </div>
         </>

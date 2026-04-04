@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Header } from "../components/Header";
 import { Navigation } from "../components/Navigation";
 import { LandingPage } from "../components/LandingPage";
@@ -25,6 +25,7 @@ const Index = () => {
     const saved = localStorage.getItem("analytics_history");
     return saved ? JSON.parse(saved) : [];
   });
+  const uploadDataCacheRef = useRef({});
 
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -45,7 +46,12 @@ const Index = () => {
   }, [user]);
 
   useEffect(() => {
-    localStorage.setItem("analytics_history", JSON.stringify(uploadHistory));
+    try {
+      localStorage.setItem("analytics_history", JSON.stringify(uploadHistory));
+    } catch (err) {
+      console.warn("Unable to persist upload history:", err);
+      toast.error("Upload history is too large to persist. Keeping current session data only.");
+    }
   }, [uploadHistory]);
 
   useEffect(() => {
@@ -88,15 +94,17 @@ const Index = () => {
   const handleFileProcessed = (data) => {
     setCurrentData(data);
 
+    const uploadId = Date.now().toString();
+    uploadDataCacheRef.current[uploadId] = data;
+
     setUploadHistory((prev) => [
       {
-        id: Date.now().toString(),
+        id: uploadId,
         fileName: data.fileName,
         uploadDate: data.uploadDate || new Date().toISOString(),
         rows: data.data.length,
         columns: Object.keys(data.data[0] || {}).length,
         fileSize: data.fileSize || "0",
-        data: data, // Keep the full data for viewing later
       },
       ...prev,
     ]);
@@ -120,15 +128,20 @@ const Index = () => {
 
   const handleViewFile = (id) => {
     const upload = uploadHistory.find((u) => u.id === id);
-    if (upload && upload.data) {
-      setCurrentData(upload.data);
+    const cachedData = uploadDataCacheRef.current[id];
+    if (upload && cachedData) {
+      setCurrentData(cachedData);
       setActiveSection("analytics");
       toast.info(`Viewing ${upload.fileName}`);
+      return;
     }
+
+    toast.warning("This file's raw rows are not available from previous sessions. Please re-upload to analyze it.");
   };
 
   const handleDeleteFile = (id) => {
     setUploadHistory((prev) => prev.filter((u) => u.id !== id));
+    delete uploadDataCacheRef.current[id];
     toast.error("File removed from history");
   };
 
