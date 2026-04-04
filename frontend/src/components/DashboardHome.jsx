@@ -81,14 +81,6 @@ export const DashboardHome = ({ onNavigate }) => {
       color:       "bg-orange-500",
       hoverColor:  "hover:bg-orange-600",
     },
-    {
-      title:       "AI Insights",
-      description: "Smart analysis of your data",
-      icon:        Brain,
-      action:      () => onNavigate("analytics"),
-      color:       "bg-purple-500",
-      hoverColor:  "hover:bg-purple-600",
-    },
   ];
 
   return (
@@ -153,7 +145,7 @@ export const DashboardHome = ({ onNavigate }) => {
       {/* ── QUICK ACTIONS ──────────────────────────────────────── */}
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (
@@ -186,7 +178,7 @@ export const DashboardHome = ({ onNavigate }) => {
 
         <div className="divide-y divide-border">
           {recentActivity.length ? (
-            recentActivity.slice(0, 8).map((activity, index) => (
+            recentActivity.slice(0, 5).map((activity, index) => (
               <div
                 key={index}
                 className="flex items-center gap-4 px-6 py-4 hover:bg-muted/20 transition-colors"
