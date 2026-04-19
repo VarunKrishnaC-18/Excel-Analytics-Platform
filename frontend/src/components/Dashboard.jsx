@@ -49,14 +49,17 @@ ChartJS.register(
 const CHART_ROW_LIMIT = 200;
 const TABLE_PREVIEW_LIMIT = 5;
 const TABLE_MODAL_LIMIT = 300;
+const CHART_FONT_FAMILY = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+const CHART_PIXEL_RATIO = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 2;
 
 const PALETTE = {
-  primary: ["#2563EB", "#7C3AED", "#059669", "#D97706", "#DC2626", "#0891B2", "#9333EA", "#16A34A"],
-  pastel: ["#93C5FD", "#C4B5FD", "#6EE7B7", "#FCD34D", "#FCA5A5", "#67E8F9", "#D8B4FE", "#86EFAC"],
+  primary: ["#2563EB", "#06B6D4", "#22C55E", "#F59E0B", "#EF4444", "#A855F7", "#EC4899", "#14B8A6"],
+  pastel: ["#93C5FD", "#67E8F9", "#86EFAC", "#FCD34D", "#FCA5A5", "#D8B4FE", "#F9A8D4", "#5EEAD4"],
   gradient: (ctx, color) => {
     const gradient = ctx.createLinearGradient(0, 0, 0, 420);
-    gradient.addColorStop(0, `${color}CC`);
-    gradient.addColorStop(1, `${color}15`);
+    gradient.addColorStop(0, `${color}F2`);
+    gradient.addColorStop(0.55, `${color}CC`);
+    gradient.addColorStop(1, `${color}22`);
     return gradient;
   },
 };
@@ -69,7 +72,25 @@ const formatTooltipNumber = (value) => {
 const BASE_OPTIONS = {
   responsive: true,
   maintainAspectRatio: false,
+  devicePixelRatio: CHART_PIXEL_RATIO,
   animation: { duration: 900, easing: "easeInOutQuart" },
+  layout: {
+    padding: { top: 8, right: 8, bottom: 4, left: 8 },
+  },
+  elements: {
+    bar: {
+      borderSkipped: false,
+      borderRadius: 10,
+    },
+    line: {
+      borderWidth: 3,
+      tension: 0.35,
+    },
+    point: {
+      borderWidth: 2,
+      hoverBorderWidth: 3,
+    },
+  },
   plugins: {
     legend: {
       position: "top",
@@ -77,8 +98,8 @@ const BASE_OPTIONS = {
         usePointStyle: true,
         pointStyle: "circle",
         padding: 20,
-        font: { size: 12, family: "'Inter', sans-serif" },
-        color: "#6B7280",
+        font: { size: 12, family: CHART_FONT_FAMILY, weight: "500" },
+        color: "#475569",
       },
     },
     tooltip: {
@@ -101,18 +122,18 @@ const BASE_OPTIONS = {
     x: {
       grid: { display: false },
       ticks: {
-        color: "#9CA3AF",
-        font: { size: 11 },
+        color: "#64748B",
+        font: { size: 11, family: CHART_FONT_FAMILY },
         maxTicksLimit: 10,
         maxRotation: 35,
       },
       border: { display: false },
     },
     y: {
-      grid: { color: "#F3F4F6", lineWidth: 1 },
+      grid: { color: "#E2E8F0", lineWidth: 1 },
       ticks: {
-        color: "#9CA3AF",
-        font: { size: 11 },
+        color: "#64748B",
+        font: { size: 11, family: CHART_FONT_FAMILY },
         callback: (v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v),
       },
       border: { display: false },
@@ -123,6 +144,7 @@ const BASE_OPTIONS = {
 const PIE_OPTIONS = {
   responsive: true,
   maintainAspectRatio: false,
+  devicePixelRatio: CHART_PIXEL_RATIO,
   animation: { duration: 900, easing: "easeInOutQuart" },
   plugins: {
     legend: {
@@ -131,8 +153,8 @@ const PIE_OPTIONS = {
         usePointStyle: true,
         pointStyle: "circle",
         padding: 16,
-        font: { size: 12 },
-        color: "#6B7280",
+        font: { size: 12, family: CHART_FONT_FAMILY, weight: "500" },
+        color: "#475569",
       },
     },
     tooltip: {
@@ -345,13 +367,16 @@ export const Dashboard = ({ data, onChartCreated }) => {
         data: chartRows.slice(0, 15).map((row) => Number(row[column]) || 0),
         backgroundColor: selectedChart === "line" ? gradient : gradient,
         borderColor: color,
-        borderWidth: selectedChart === "line" ? 2.5 : 1.5,
-        borderRadius: selectedChart === "bar" ? 6 : 0,
-        pointRadius: selectedChart === "line" ? 3.5 : 0,
-        pointHoverRadius: selectedChart === "line" ? 6 : 0,
+        borderWidth: selectedChart === "line" ? 3 : 2,
+        borderRadius: selectedChart === "bar" ? 10 : 0,
+        maxBarThickness: 36,
+        pointRadius: selectedChart === "line" ? 4 : 0,
+        pointHoverRadius: selectedChart === "line" ? 7 : 0,
         pointBackgroundColor: color,
+        pointBorderColor: "#FFFFFF",
         fill: selectedChart === "line",
         tension: 0.4,
+        cubicInterpolationMode: "monotone",
       };
     });
 
@@ -412,11 +437,12 @@ export const Dashboard = ({ data, onChartCreated }) => {
             x: xNumeric ? Number(row[xAxis]) || rowIndex : rowIndex,
             y: Number(row[column]) || 0,
           })),
-          backgroundColor: chartRows.map((_, rowIndex) => `${PALETTE.primary[rowIndex % PALETTE.primary.length]}BB`),
+          backgroundColor: chartRows.map((_, rowIndex) => `${PALETTE.primary[rowIndex % PALETTE.primary.length]}EE`),
           borderColor: color,
-          borderWidth: 1.2,
-          pointRadius: 4.5,
-          pointHoverRadius: 7,
+          borderWidth: 1.5,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBorderColor: "#FFFFFF",
         };
       }),
     };
